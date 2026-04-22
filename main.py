@@ -1,20 +1,20 @@
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
-from .routes import router     # ← this line was failing
-from sqlmodel import SQLModel
+from .routes import router     
+from sqlmodel import Session
 from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
-from .db import engine
-from .models import Profile
+from .db import engine, init_db
 
-def create_db_and_tables():
-    SQLModel.metadata.create_all(engine)
+
+
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    create_db_and_tables()
-    yield
+    with Session(engine) as session:
+        init_db(session)
+        yield
 
 
 app = FastAPI(lifespan=lifespan)

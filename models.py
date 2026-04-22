@@ -11,10 +11,10 @@ class ProfileBase(SQLModel):
     name: str = Field(unique=True, index=True)
     gender: str
     gender_probability: float
-    sample_size: int
     age: int
-    age_group: str = Field(max_length=2)
-    country_id: str
+    age_group: str
+    country_id: str  = Field(max_length=2)
+    country_name: str
     country_probability: float
 
 
@@ -23,12 +23,14 @@ class ProfilePublic(SQLModel):
     name: str
     gender: str
     gender_probability: float
-    sample_size: int
     age: int
     age_group: str
     country_id: str
     country_probability: float
     created_at: datetime
+
+class ProfileCreate(ProfileBase):
+    pass
 
 
 class ProfileCreateResponse(SQLModel):
