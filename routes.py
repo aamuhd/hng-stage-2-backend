@@ -157,7 +157,7 @@ def delete_profile(id: uuid.UUID, session: SessionDep):
 
 
 
-@router.get("/search", response_model=ProfilesPublicResponse)
+@router.get("/api/profiles/search", response_model=ProfilesPublicResponse)
 def search_profiles(
     session: SessionDep,
     q: str = Query(..., min_length=1),
