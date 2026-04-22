@@ -7,14 +7,20 @@ def parse_natural_query(q: str) -> dict[str, Any] | None:
     q = q.lower().strip()
     filters = {}
 
-    # Check for gender
-    if re.search(r'\bmale\b', q):
+    # Gender Handling
+    has_male = bool(re.search(r'\bmale(s)?\b', q))
+    has_female = bool(re.search(r'\bfemale(s)?\b', q))
+
+    if has_male and has_female:
+        # "male and female"
+        pass
+    elif has_male:
         filters["gender"] = "male"
-    elif re.search(r'\bfemale\b', q):
+    elif has_female:
         filters["gender"] = "female"
 
     # Check for age related
-    if re.search(r'\b(teenager|teen|teens)\b', q):
+    if re.search(r'\b(teenager(s)?|teen|teens)\b', q):
         filters["age_group"] = "teenager"
         if "above 17" in q or "over 17" in q:
             filters["min_age"] = 17
@@ -51,7 +57,7 @@ def parse_natural_query(q: str) -> dict[str, Any] | None:
             break
 
     # "males and females" → remove gender filter
-    if "male and female" in q or "males and females" in q:
-        filters.pop("gender", None)
+    #if "male and female" in q or "males and females" in q:
+        #filters.pop("gender", None)
 
     return filters if filters else None

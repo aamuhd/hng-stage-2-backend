@@ -1,6 +1,6 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import JSONResponse
-from typing import Annotated
+
 
 from pydantic import BaseModel
 from sqlmodel import select, func, col, desc, asc
@@ -10,6 +10,7 @@ from .models import Profile, ProfilesPublicResponse, ProfileCreateResponse
 from .filters import ProfileFilters
 from .api import get_data
 import uuid
+from .nl_parser import parse_natural_query
 
 
 # helper function
@@ -81,7 +82,6 @@ async def create_profile(request: RequestBody, session: SessionDep):
                     "name": "ella",
                     "gender": existing_profile.gender,
                     "gender_probability": existing_profile.gender_probability,
-                    "sample_size": existing_profile.sample_size,
                     "age": existing_profile.age,
                     "age_group": existing_profile.age_group,
                     "country_id": "DRC",
@@ -153,5 +153,40 @@ def delete_profile(id: uuid.UUID, session: SessionDep):
     session.delete(profile)
     session.commit()
     return
+
+
+
+
+@router.get("/search", response_model=ProfilesPublicResponse)
+def search_profiles(
+    session: SessionDep,
+    q: str = Query(..., min_length=1),
+    page: int = 1,
+    limit: int = Query(10, ge=1, le=50)
+):
+    parsed = parse_natural_query(q)
+    if not parsed:
+        raise HTTPException(status_code=400, detail="Unable to interpret query")
+
+    # Convert parsed dict to ProfileFilters
+    filters = ProfileFilters(
+        **parsed,
+        page=page,
+        limit=limit
+    )
+
+    query = build_filtered_query(filters)
+
+    total = session.exec(select(func.count()).select_from(query.subquery())).one()
+    offset = (page - 1) * limit
+    results = session.exec(query.offset(offset).limit(limit)).all()
+
+    return {
+        "status": "success",
+        "page": page,
+        "limit": limit,
+        "total": total,
+        "data": results
+    }
     
 
