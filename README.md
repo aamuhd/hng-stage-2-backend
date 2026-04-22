@@ -1,5 +1,5 @@
-# 🚀 Backend Wizards — Stage 1  
-**Data Persistence & API Design Assessment**
+# 🚀 Backend Wizards — Stage 2  
+**Intelligence Query Engine Assesment**
 
 ## 📌 Overview
 
@@ -205,6 +205,93 @@ The API allows all origins:
 ```end
 allow_origins = ["*"]
 ```
+
+
+
+## Natural Language Query Parsing
+
+The /api/profiles/search endpoint supports plain English queries and converts them into structured filters using a rule-based parser (no AI/LLM involved).
+
+### Endpoint:
+**GET `/api/profiles/search?q=your query here`**
+
+## Supported Keywords and Mappings
+
+### The parser recognizes the following keywords and maps them to filters:Keyword / Phrase
+
+
+| Keyword / Phrase | Mapped Filter(s) | Example Query |
+|------------------|------------------|---------------|
+| male, males | gender=male | "young males" |
+| female, females | gender=female | "females above 30" |
+| male and female, males and females | No gender filter (includes both) | "male and female teenagers" |
+| teenager, teenagers, teens, teen | age_group=teenager | "teenagers from kenya" |
+| adult, adults | age_group=adult | "adult males from nigeria" |
+| young | min_age=16, max_age=24 | "young males" |
+| above X, over X, older than X | min_age=X | "females above 30", "teenagers above 17" |
+| below X, under X, younger than X | max_age=X | "people under 25" |
+| Country names | country_id=XY | "people from nigeria", "from kenya" |
+
+
+### Supported Countries (currently):nigeria → NG
+ - kenya → KE
+ - angola → AO
+ - south africa → ZA
+ - central african republic  → CF
+ - tanzania → TZ
+ - uganda → UG
+
+
+## How the Parsing Logic Works
+
+1. Lowercase normalization: The entire query is converted to lowercase.
+2. Gender Logic:
+ - If both "male" and "female" appear → gender filter is ignored (to support "male and female").
+ - If only one appears → apply that gender filter.
+
+3. Age Group:
+ - "teenager/teens" sets age_group=teenager
+ - "adult" sets age_group=adult
+ - "young" sets age range 16–24
+
+4. Age Range:
+ - Phrases like "above 17", "over 25", "older than 30" set min_age
+ - Phrases like "below 40", "under 25" set max_age
+
+5. Country:
+ - Simple string matching against a predefined country map.
+
+6. Combination:
+ - All detected filters are combined using AND logic (must match all conditions).
+
+#### Example Mappings:
+ - "young males" → gender=male, min_age=16, max_age=24
+ - "females above 30" → gender=female, min_age=30
+ - "male and female teenagers above 17" → age_group=teenager, min_age=17
+ - "adult males from kenya" → gender=male, age_group=adult, country_id=KE
+ - "people from angola" → country_id=AO
+
+
+## Limitations & Edge Cases Not Handled
+
+ - No complex boolean logic: Does not support "OR" conditions (e.g. "males or females above 30" will not work properly).
+ - No multi-word age groups beyond "young", "teenager", and "adult".
+ - No numeric ranges with "between": "between 20 and 30" is not supported yet.
+ - Limited country support: Only a few countries are mapped. Unknown countries are ignored.
+ - No support for nationality adjectives: "Nigerian males" or "Kenyan females" are not recognized (only "from nigeria", "from kenya").
+ - No handling of typos or spelling mistakes.
+ - No support for relative ages like "in their 20s", "elderly", "children".
+ - Order of words matters slightly: Some phrases may fail if worded unusually (e.g. "above 17 teenagers male").
+ - No support for multiple countries in one query.
+ - Case sensitivity: Everything is lowercased, so capitalization is ignored, but punctuation may affect matching in rare cases.
+
+#### If the parser cannot extract any meaningful filters from the query, it returns:
+```json
+{
+  "status": "error",
+  "message": "Unable to interpret query"
+}```
+
 
 ## Installation
 * create and activate venv
