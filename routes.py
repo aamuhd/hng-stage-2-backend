@@ -5,12 +5,12 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from sqlmodel import select, func, col, desc, asc
 
-from .deps import SessionDep
-from .models import Profile, ProfilesPublicResponse, ProfileCreateResponse
-from .filters import ProfileFilters
-from .api import get_data
+from deps import SessionDep
+from models import Profile, ProfilesPublicResponse, ProfileCreateResponse
+from filters import ProfileFilters
+from api import get_data
 import uuid
-from .nl_parser import parse_natural_query
+from nl_parser import parse_natural_query
 
 
 # helper function
