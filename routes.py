@@ -2,13 +2,40 @@ from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 
 from pydantic import BaseModel
-from sqlmodel import select, func, col
+from sqlmodel import select, func, col, desc, asc
 
 from deps import SessionDep
 from models import Profile, ProfilesPublicResponse, ProfileCreateResponse
+from filters import ProfileFilters
 from api import get_data
 import uuid
 
+
+# helper function
+def build_filtered_query(filters: ProfileFilters):
+    query = select(Profile)
+
+    if filters.gender:
+        query = query.where(Profile.gender == filters.gender)
+    if filters.age_group:
+        query = query.where(Profile.age_group == filters.age_group)
+    if filters.country_id:
+        query = query.where(Profile.country_id == filters.country_id)
+    if filters.min_age is not None:
+        query = query.where(Profile.age >= filters.min_age)
+    if filters.max_age is not None:
+        query = query.where(Profile.age <= filters.max_age)
+    if filters.min_gender_probability is not None:
+        query = query.where(Profile.gender_probability >= filters.min_gender_probability)
+    if filters.min_country_probability is not None:
+        query = query.where(Profile.country_probability >= filters.min_country_probability)
+
+    # Sorting
+    if filters.sort_by:
+        order_func = desc if filters.order == "desc" else asc
+        query = query.order_by(order_func(getattr(Profile, filters.sort_by)))
+
+    return query
 
 
 router = APIRouter()
