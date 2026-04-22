@@ -3,7 +3,7 @@ import uuid
 from uuid6 import uuid7
 from datetime import datetime
 
-from utils import get_utc_timestamp
+from .utils import get_utc_timestamp
 
 
 
@@ -13,14 +13,14 @@ class ProfileBase(SQLModel):
     gender_probability: float
     sample_size: int
     age: int
-    age_group: str
+    age_group: str = Field(max_length=2)
     country_id: str
     country_probability: float
 
 
 class ProfilePublic(SQLModel):
     id: uuid.UUID 
-    name: str = Field(unique=True, index=True)
+    name: str
     gender: str
     gender_probability: float
     sample_size: int
@@ -43,8 +43,10 @@ class ProfilesPublic(ProfileBase):
 
 
 class ProfilesPublicResponse(SQLModel):
-    status: str = "success"
-    count: int
+    status: str
+    page: int
+    limit: int
+    total: int
     data: list[ProfilePublic]
 
 

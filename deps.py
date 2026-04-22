@@ -2,7 +2,7 @@ from fastapi import Depends
 from typing import Annotated
 from sqlmodel import Session
 
-from db import engine
+from .db import engine
 
 
 
