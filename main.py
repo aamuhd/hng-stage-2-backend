@@ -1,11 +1,11 @@
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
-from routes import router     # ← this line was failing
+from .routes import router     # ← this line was failing
 from sqlmodel import SQLModel
 from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
-from db import engine
-
+from .db import engine
+from .models import Profile
 
 def create_db_and_tables():
     SQLModel.metadata.create_all(engine)

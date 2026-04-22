@@ -8,4 +8,5 @@ sqlite_url = f'sqlite:///./{sqlite_filename}'
 engine = create_engine(
     sqlite_url,
     connect_args={'check_same_thread': False},
+    echo=True
 )

@@ -1,13 +1,14 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
+from typing import Annotated
 
 from pydantic import BaseModel
 from sqlmodel import select, func, col, desc, asc
 
-from deps import SessionDep
-from models import Profile, ProfilesPublicResponse, ProfileCreateResponse
-from filters import ProfileFilters
-from api import get_data
+from .deps import SessionDep
+from .models import Profile, ProfilesPublicResponse, ProfileCreateResponse
+from .filters import ProfileFilters
+from .api import get_data
 import uuid
 
 
@@ -114,39 +115,33 @@ def get_profile(id:uuid.UUID, session: SessionDep):
     }
 
 
+# Return all filtered profiles
 @router.get("/api/profiles", response_model=ProfilesPublicResponse)
 def read_all_users(
     session: SessionDep,
-    gender: str | None = None,
-    country_id: str | None = None,
-    age_group: str | None = None
+    filters: ProfileFilters = Depends()
 ):
     
-    count_statement = select(func.count()).select_from(Profile)
-    count = session.exec(count_statement).one()
 
-    statement = select(Profile).order_by(col(Profile.created_at).desc())
-    if gender:
-        statement = statement.where(
-            func.lower(Profile.gender) == gender.lower()
-        )
-    if country_id:
-        statement = statement.where(
-            func.lower(Profile.country_id) == country_id.lower()
-        )
-    if age_group:
-        statement = statement.where(
-            func.lower(Profile.age_group) == age_group.lower()
-        )
+    query = build_filtered_query(filters)
 
-    profiles = session.exec(statement).all()
+    # Count total
+    total = session.exec(select(func.count()).select_from(query.subquery())).one()
+
+    # Paginate
+    offset = filters.get_offset()
+    results = session.exec(query.offset(offset).limit(filters.limit)).all()
     return {
         "status": "success",
-        "count": count,
-        "data": profiles
+        "page": filters.page,
+        "limit": filters.limit,
+        "total": total,
+        "data": results
     }
 
 
+
+# Delete profile
 @router.delete("/api/profiles/{id}", status_code=204)
 def delete_profile(id: uuid.UUID, session: SessionDep):
     profile = session.exec(select(Profile).where(Profile.id == id)).first()
