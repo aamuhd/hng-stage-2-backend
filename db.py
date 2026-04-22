@@ -1,4 +1,4 @@
-from sqlmodel import create_engine, Session, SQLModel
+from sqlmodel import create_engine, Session, SQLModel, func, select
 import json
 
 from .models import ProfileCreate, Profile
@@ -24,6 +24,11 @@ with open('seed_profiles.json') as file:
 def init_db(session: Session) -> None:
 
     SQLModel.metadata.create_all(engine)
+
+    # Check if table already has data
+    count = session.exec(select(func.count()).select_from(Profile)).one()
+    if count > 0:
+        return
     
     for value in data["profiles"]:
         profile_create = ProfileCreate(
