@@ -3,7 +3,7 @@ import uuid
 from uuid6 import uuid7
 from datetime import datetime
 
-from .utils import get_utc_timestamp
+from utils import get_utc_timestamp
 
 
 

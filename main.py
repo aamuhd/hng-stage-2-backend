@@ -1,10 +1,10 @@
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
-from .routes import router     
+from routes import router     
 from sqlmodel import Session
 from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
-from .db import engine, init_db
+from db import engine, init_db
 
 
 

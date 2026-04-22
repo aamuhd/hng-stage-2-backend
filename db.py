@@ -1,7 +1,7 @@
 from sqlmodel import create_engine, Session, SQLModel, func, select
 import json
 
-from .models import ProfileCreate, Profile
+from models import ProfileCreate, Profile
 
 
 
