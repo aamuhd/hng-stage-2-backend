@@ -13,6 +13,7 @@ import uuid
 from nl_parser import parse_natural_query
 
 
+
 # helper function
 def build_filtered_query(filters: ProfileFilters):
     query = select(Profile)
@@ -45,6 +46,43 @@ router = APIRouter()
 
 class RequestBody(BaseModel):
     name: str
+
+
+
+
+@router.get("/api/profiles/search", response_model=ProfilesPublicResponse)
+def search_profiles(
+    session: SessionDep,
+    q: str = Query(..., min_length=1),
+    page: int = 1,
+    limit: int = Query(10, ge=1, le=50)
+):
+    parsed = parse_natural_query(q)
+    if not parsed:
+        raise HTTPException(status_code=400, detail="Unable to interpret query")
+
+    # Convert parsed dict to ProfileFilters
+    filters = ProfileFilters(
+        **parsed,
+        page=page,
+        limit=limit
+    )
+
+    query = build_filtered_query(filters)
+
+    total = session.exec(select(func.count()).select_from(query.subquery())).one()
+    offset = (page - 1) * limit
+    results = session.exec(query.offset(offset).limit(limit)).all()
+
+    return {
+        "status": "success",
+        "page": page,
+        "limit": limit,
+        "total": total,
+        "data": results
+    }
+    
+
 
 
 @router.post("/api/profiles", status_code=201, response_model=ProfileCreateResponse)
@@ -154,39 +192,5 @@ def delete_profile(id: uuid.UUID, session: SessionDep):
     session.commit()
     return
 
-
-
-
-@router.get("/api/profiles/search", response_model=ProfilesPublicResponse)
-def search_profiles(
-    session: SessionDep,
-    q: str = Query(..., min_length=1),
-    page: int = 1,
-    limit: int = Query(10, ge=1, le=50)
-):
-    parsed = parse_natural_query(q)
-    if not parsed:
-        raise HTTPException(status_code=400, detail="Unable to interpret query")
-
-    # Convert parsed dict to ProfileFilters
-    filters = ProfileFilters(
-        **parsed,
-        page=page,
-        limit=limit
-    )
-
-    query = build_filtered_query(filters)
-
-    total = session.exec(select(func.count()).select_from(query.subquery())).one()
-    offset = (page - 1) * limit
-    results = session.exec(query.offset(offset).limit(limit)).all()
-
-    return {
-        "status": "success",
-        "page": page,
-        "limit": limit,
-        "total": total,
-        "data": results
-    }
     
 
